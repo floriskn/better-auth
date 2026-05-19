@@ -3970,7 +3970,7 @@ describe("signupWithInvitation session activation", async () => {
 	});
 
 	const client = createAuthClient({
-		plugins: [organizationClient()],
+		plugins: [organizationClient({ teams: { enabled: true } })],
 		baseURL: "http://localhost:3000",
 		fetchOptions: { customFetchImpl },
 	});

@@ -1,9 +1,10 @@
 import { DatabaseSync } from "node:sqlite";
-import { Kysely, SqliteDialect } from "kysely";
+import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
 import { D1SqliteDialect } from "./d1-sqlite-dialect";
 import { createKyselyAdapter } from "./dialect";
 import { kyselyAdapter } from "./kysely-adapter";
+import { NodeSqliteDialect } from "./node-sqlite-dialect";
 
 describe("kysely-adapter", () => {
 	class UnknownDialect {
@@ -52,7 +53,7 @@ describe("kysely-adapter", () => {
 
 	it("should create kysely adapter", () => {
 		const db = new Kysely({
-			dialect: new SqliteDialect({
+			dialect: new NodeSqliteDialect({
 				database: {
 					close: () => {},
 					prepare: () =>
@@ -80,7 +81,7 @@ describe("kysely-adapter", () => {
 
 	it("should enable transactions by default for Kysely sqlite instances", async () => {
 		const db = new Kysely({
-			dialect: new SqliteDialect({
+			dialect: new NodeSqliteDialect({
 				database: new DatabaseSync(":memory:"),
 			}),
 		});
@@ -97,7 +98,7 @@ describe("kysely-adapter", () => {
 
 	it("should respect an explicit transaction opt-out", async () => {
 		const db = new Kysely({
-			dialect: new SqliteDialect({
+			dialect: new NodeSqliteDialect({
 				database: new DatabaseSync(":memory:"),
 			}),
 		});

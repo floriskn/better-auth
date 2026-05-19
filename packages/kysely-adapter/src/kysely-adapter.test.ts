@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { Kysely } from "kysely";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { D1SqliteDialect } from "./d1-sqlite-dialect";
 import { createKyselyAdapter } from "./dialect";
 import { kyselyAdapter } from "./kysely-adapter";
@@ -196,5 +196,44 @@ describe("kysely-adapter", () => {
 		} as never);
 
 		expect(adapter.transaction).toBeUndefined();
+	});
+
+	it("consumeOne deletes only the selected row for non-unique predicates", async () => {
+		const selectQuery = {
+			select: vi.fn(() => selectQuery),
+			where: vi.fn(() => selectQuery),
+			limit: vi.fn(() => selectQuery),
+		};
+		const deleted = {
+			id: "verification-1",
+			identifier: "same-identifier",
+			value: "first",
+		};
+		const deleteQuery = {
+			where: vi.fn(() => deleteQuery),
+			returningAll: vi.fn(() => deleteQuery),
+			executeTakeFirst: vi.fn().mockResolvedValue(deleted),
+		};
+		const db = {
+			selectFrom: vi.fn(() => selectQuery),
+			deleteFrom: vi.fn(() => deleteQuery),
+		} as any;
+		const adapter = kyselyAdapter(db)({});
+
+		const result = await adapter.consumeOne({
+			model: "verification",
+			where: [{ field: "identifier", value: "same-identifier" }],
+		});
+
+		expect(result).toEqual(deleted);
+		expect(selectQuery.select).toHaveBeenCalledWith("verification.id");
+		expect(selectQuery.where).toHaveBeenCalledTimes(1);
+		expect(deleteQuery.where).toHaveBeenCalledTimes(1);
+		expect(deleteQuery.where).toHaveBeenCalledWith(
+			"verification.id",
+			"in",
+			selectQuery,
+		);
+		expect(deleteQuery.returningAll).toHaveBeenCalledTimes(1);
 	});
 });
